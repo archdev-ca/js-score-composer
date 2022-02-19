@@ -82,26 +82,25 @@
       var closedNodes = {};
 
       // Create endpoints
-      createCell(1, 1, "endpoint", '<i class="f">A</i>');
-      createCell(8, 4, "endpoint", '<i class="f">B</i>');
+      createNode(1, 1, "endpoint", '<i class="f">A</i>');
+      createNode(8, 4, "endpoint", '<i class="f">B</i>');
 
-      function createCell(x, y, className, data) {
+      function createNode(x, y, className, data) {
         console.log(className);
-        var cell = document.createElement("div");
-        cell.className = "cell";
-        cell.style.left = `${x * cellSize}px`;
-        cell.style.top = `${y * cellSize}px`;
-        cell.style.width = `${cellSize}px`;
-        cell.style.height = `${cellSize}px`;
+        var node = document.createElement("div");
+        node.className = "cell";
+        node.style.left = `${x * cellSize}px`;
+        node.style.top = `${y * cellSize}px`;
+        node.style.width = `${cellSize}px`;
+        node.style.height = `${cellSize}px`;
         if (className) {
-          cell.className += ` ${className}`;
+          node.className += ` ${className}`;
         }
         if (data) {
-          cell.innerHTML = data;
+          node.innerHTML = data;
         }
-        grid.appendChild(cell);
-        console.log(cell);
-        return cell;
+        grid.appendChild(node);
+        return node;
       }
 
       // Generate the grid
@@ -110,7 +109,7 @@
         grid.style.height = `${gridY * cellSize}px`;
         for (let x = 0; x < gridX; x++) {
           for (let y = 0; y < gridY; y++) {
-            var cell = createCell(x, y);
+            var cell = createNode(x, y);
             cells.push(cell);
             if (!cellMap[x]) {
               cellMap[x] = {};
@@ -124,9 +123,9 @@
       // Create obstacles
       obstacleMap[7] = {};
       obstacleMap[8] = {};
-      obstacleMap[7][3] = createCell(7, 3, "obstacle");
-      obstacleMap[7][4] = createCell(7, 4, "obstacle");
-      obstacleMap[8][3] = createCell(8, 3, "obstacle");
+      obstacleMap[7][3] = createNode(7, 3, "obstacle");
+      obstacleMap[7][4] = createNode(7, 4, "obstacle");
+      obstacleMap[8][3] = createNode(8, 3, "obstacle");
 
       function solve() {
         // get surrounding paths
@@ -137,36 +136,36 @@
       function getSurroundingNodes(coords) {
         var surroundingNodes = [];
 
-        if (isValidCoords({ x: coords.x - 1, y: coords.y - 1 })) {
-          surroundingNodes.push({ x: coords.x - 1, y: coords.y - 1 });
-        }
+        // if (isValidCoords({ x: coords.x - 1, y: coords.y - 1 })) {
+        //   surroundingNodes.push({ x: coords.x - 1, y: coords.y - 1 });
+        // }
         if (isValidCoords({ x: coords.x, y: coords.y - 1 })) {
           surroundingNodes.push({ x: coords.x, y: coords.y - 1 });
         }
-        if (isValidCoords({ x: coords.x + 1, y: coords.y - 1 })) {
-          surroundingNodes.push({ x: coords.x + 1, y: coords.y - 1 });
-        }
+        // if (isValidCoords({ x: coords.x + 1, y: coords.y - 1 })) {
+        //   surroundingNodes.push({ x: coords.x + 1, y: coords.y - 1 });
+        // }
         if (isValidCoords({ x: coords.x - 1, y: coords.y })) {
           surroundingNodes.push({ x: coords.x - 1, y: coords.y });
         }
         if (isValidCoords({ x: coords.x + 1, y: coords.y })) {
           surroundingNodes.push({ x: coords.x + 1, y: coords.y });
         }
-        if (isValidCoords({ x: coords.x - 1, y: coords.y + 1 })) {
-          surroundingNodes.push({ x: coords.x - 1, y: coords.y + 1 });
-        }
+        // if (isValidCoords({ x: coords.x - 1, y: coords.y + 1 })) {
+        //   surroundingNodes.push({ x: coords.x - 1, y: coords.y + 1 });
+        // }
         if (isValidCoords({ x: coords.x, y: coords.y + 1 })) {
           surroundingNodes.push({ x: coords.x, y: coords.y + 1 });
         }
-        if (isValidCoords({ x: coords.x + 1, y: coords.y + 1 })) {
-          surroundingNodes.push({ x: coords.x + 1, y: coords.y + 1 });
-        }
+        // if (isValidCoords({ x: coords.x + 1, y: coords.y + 1 })) {
+        //   surroundingNodes.push({ x: coords.x + 1, y: coords.y + 1 });
+        // }
 
         for (let i = 0; i < surroundingNodes.length; i++) {
           var gCost = getDist(surroundingNodes[i], startPoints);
           var hCost = getDist(surroundingNodes[i], endPoints);
           var fCost = gCost + hCost;
-          var path = createCell(
+          var path = createNode(
             surroundingNodes[i].x,
             surroundingNodes[i].y,
             "path",

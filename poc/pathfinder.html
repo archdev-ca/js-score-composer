@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      #canvas {
+        background-color: #f5f5f5;
+        box-sizing: content-box;
+        border: 2px solid #000;
+        position: absolute;
+        margin: 0 auto;
+        top: 50%;
+        left: 0;
+        right: 0;
+        transform: translateY(-50%);
+      }
+      #canvas .cell {
+        background-color: #fff;
+        border: 2px solid #000;
+        position: absolute;
+      }
+      #canvas .cell.endpoint {
+        background-color: rgb(0, 162, 255);
+        z-index: 2;
+      }
+      #canvas .cell.obstacle {
+        background-color: #333;
+        z-index: 2;
+      }
+      #canvas .cell.path {
+        background-color: rgb(0, 255, 98);
+        z-index: 2;
+      }
+      #canvas .cell > i {
+        position: absolute;
+        top: 4px;
+        font-size: 0.8em;
+        font-style: normal;
+      }
+      #canvas .cell > i.g {
+        left: 4px;
+      }
+      #canvas .cell > i.h {
+        right: 4px;
+      }
+      #canvas .cell > i.f {
+        right: 3px;
+        left: 3px;
+        font-size: 1.5em;
+        line-height: 2.65em;
+        text-align: center;
+      }
+      #canvas .cell.path.current {
+        background-color: rgb(148, 0, 0);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="canvas"></div>
+    <button onclick="solve()">Solve</button>
+    <script>
+      var grid = document.getElementById("canvas");
+      var gridX = 10;
+      var gridY = 10;
+      var cellSize = 70;
+
+      var cells = [];
+      var cellMap = {};
+      var obstacleMap = {};
+      var endPoints = { x: 8, y: 4 };
+      var startPoints = { x: 1, y: 1 };
+      var openNodes = {};
+      var closedNodes = {};
+
+      // Create endpoints
+      createCell(1, 1, "endpoint", '<i class="f">A</i>');
+      createCell(8, 4, "endpoint", '<i class="f">B</i>');
+
+      function createCell(x, y, className, data) {
+        console.log(className);
+        var cell = document.createElement("div");
+        cell.className = "cell";
+        cell.style.left = `${x * cellSize}px`;
+        cell.style.top = `${y * cellSize}px`;
+        cell.style.width = `${cellSize}px`;
+        cell.style.height = `${cellSize}px`;
+        if (className) {
+          cell.className += ` ${className}`;
+        }
+        if (data) {
+          cell.innerHTML = data;
+        }
+        grid.appendChild(cell);
+        console.log(cell);
+        return cell;
+      }
+
+      // Generate the grid
+      function generateGrid() {
+        grid.style.width = `${gridX * cellSize}px`;
+        grid.style.height = `${gridY * cellSize}px`;
+        for (let x = 0; x < gridX; x++) {
+          for (let y = 0; y < gridY; y++) {
+            var cell = createCell(x, y);
+            cells.push(cell);
+            if (!cellMap[x]) {
+              cellMap[x] = {};
+            }
+            cellMap[x][y] = cell;
+          }
+        }
+      }
+      generateGrid();
+
+      // Create obstacles
+      obstacleMap[7] = {};
+      obstacleMap[8] = {};
+      obstacleMap[7][3] = createCell(7, 3, "obstacle");
+      obstacleMap[7][4] = createCell(7, 4, "obstacle");
+      obstacleMap[8][3] = createCell(8, 3, "obstacle");
+
+      function solve() {
+        // get surrounding paths
+        var starting = { x: 1, y: 1 };
+        getSurroundingNodes(starting);
+      }
+
+      function getSurroundingNodes(coords) {
+        var surroundingNodes = [];
+
+        if (isValidCoords({ x: coords.x - 1, y: coords.y - 1 })) {
+          surroundingNodes.push({ x: coords.x - 1, y: coords.y - 1 });
+        }
+        if (isValidCoords({ x: coords.x, y: coords.y - 1 })) {
+          surroundingNodes.push({ x: coords.x, y: coords.y - 1 });
+        }
+        if (isValidCoords({ x: coords.x + 1, y: coords.y - 1 })) {
+          surroundingNodes.push({ x: coords.x + 1, y: coords.y - 1 });
+        }
+        if (isValidCoords({ x: coords.x - 1, y: coords.y })) {
+          surroundingNodes.push({ x: coords.x - 1, y: coords.y });
+        }
+        if (isValidCoords({ x: coords.x + 1, y: coords.y })) {
+          surroundingNodes.push({ x: coords.x + 1, y: coords.y });
+        }
+        if (isValidCoords({ x: coords.x - 1, y: coords.y + 1 })) {
+          surroundingNodes.push({ x: coords.x - 1, y: coords.y + 1 });
+        }
+        if (isValidCoords({ x: coords.x, y: coords.y + 1 })) {
+          surroundingNodes.push({ x: coords.x, y: coords.y + 1 });
+        }
+        if (isValidCoords({ x: coords.x + 1, y: coords.y + 1 })) {
+          surroundingNodes.push({ x: coords.x + 1, y: coords.y + 1 });
+        }
+
+        for (let i = 0; i < surroundingNodes.length; i++) {
+          var gCost = getDist(surroundingNodes[i], startPoints);
+          var hCost = getDist(surroundingNodes[i], endPoints);
+          var fCost = gCost + hCost;
+          var path = createCell(
+            surroundingNodes[i].x,
+            surroundingNodes[i].y,
+            "path",
+            `<i class="g">${gCost}</i><i class="h">${hCost}</i><i class="f">${fCost}</i>`
+          );
+          grid.appendChild(path);
+        }
+      }
+
+      function isValidCoords(coords) {
+        if (
+          coords.x > -1 &&
+          coords.x < cellSize / gridX &&
+          coords.y > -1 &&
+          coords.y < cellSize / gridY &&
+          !(obstacleMap[coords.x] && obstacleMap[coords.x][coords.y]) &&
+          !(coords.x == endPoints.x && coords.y == endPoints.y) &&
+          !(coords.x == startPoints.x && coords.y == startPoints.y)
+        ) {
+          return true;
+        }
+        return false;
+      }
+
+      function getDist(originCoords, targetCoords) {
+        return (
+          (Math.abs(originCoords.x - targetCoords.x) +
+            Math.abs(originCoords.y - targetCoords.y)) *
+          10
+        );
+      }
+    </script>
+  </body>
+</html>

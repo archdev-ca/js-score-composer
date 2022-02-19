@@ -73,8 +73,8 @@
       var gridY = 10;
       var cellSize = 70;
 
-      var cells = [];
-      var cellMap = {};
+      var nodes = [];
+      var nodesMap = {};
       var obstacleMap = {};
       var endPoints = { x: 8, y: 4 };
       var startPoints = { x: 1, y: 1 };
@@ -110,11 +110,11 @@
         for (let x = 0; x < gridX; x++) {
           for (let y = 0; y < gridY; y++) {
             var cell = createNode(x, y);
-            cells.push(cell);
-            if (!cellMap[x]) {
-              cellMap[x] = {};
+            nodes.push(cell);
+            if (!nodesMap[x]) {
+              nodesMap[x] = {};
             }
-            cellMap[x][y] = cell;
+            nodesMap[x][y] = cell;
           }
         }
       }
@@ -136,30 +136,34 @@
       function getSurroundingNodes(coords) {
         var surroundingNodes = [];
 
-        // if (isValidCoords({ x: coords.x - 1, y: coords.y - 1 })) {
-        //   surroundingNodes.push({ x: coords.x - 1, y: coords.y - 1 });
-        // }
         if (isValidCoords({ x: coords.x, y: coords.y - 1 })) {
-          surroundingNodes.push({ x: coords.x, y: coords.y - 1 });
+          surroundingNodes.push({
+            x: coords.x,
+            y: coords.y - 1,
+            parentNode: null,
+          });
         }
-        // if (isValidCoords({ x: coords.x + 1, y: coords.y - 1 })) {
-        //   surroundingNodes.push({ x: coords.x + 1, y: coords.y - 1 });
-        // }
         if (isValidCoords({ x: coords.x - 1, y: coords.y })) {
-          surroundingNodes.push({ x: coords.x - 1, y: coords.y });
+          surroundingNodes.push({
+            x: coords.x - 1,
+            y: coords.y,
+            parentNode: null,
+          });
         }
         if (isValidCoords({ x: coords.x + 1, y: coords.y })) {
-          surroundingNodes.push({ x: coords.x + 1, y: coords.y });
+          surroundingNodes.push({
+            x: coords.x + 1,
+            y: coords.y,
+            parentNode: null,
+          });
         }
-        // if (isValidCoords({ x: coords.x - 1, y: coords.y + 1 })) {
-        //   surroundingNodes.push({ x: coords.x - 1, y: coords.y + 1 });
-        // }
         if (isValidCoords({ x: coords.x, y: coords.y + 1 })) {
-          surroundingNodes.push({ x: coords.x, y: coords.y + 1 });
+          surroundingNodes.push({
+            x: coords.x,
+            y: coords.y + 1,
+            parentNode: null,
+          });
         }
-        // if (isValidCoords({ x: coords.x + 1, y: coords.y + 1 })) {
-        //   surroundingNodes.push({ x: coords.x + 1, y: coords.y + 1 });
-        // }
 
         for (let i = 0; i < surroundingNodes.length; i++) {
           var gCost = getDist(surroundingNodes[i], startPoints);

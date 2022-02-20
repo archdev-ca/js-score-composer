@@ -82,11 +82,30 @@
       var closedNodes = {};
 
       // Create endpoints
-      createNode(1, 1, "endpoint", '<i class="f">A</i>');
-      createNode(8, 4, "endpoint", '<i class="f">B</i>');
+      {
+        let startNode = createNode(1, 1, "endpoint", '<i class="f">A</i>');
+        nodesMap = {
+          ...nodesMap,
+          [1]: {
+            [1]: {
+              el: startNode,
+              coords: { x: 1, y: 1 },
+            },
+          },
+        };
+        let endNode = createNode(8, 4, "endpoint", '<i class="f">B</i>');
+        nodesMap = {
+          ...nodesMap,
+          [1]: {
+            [1]: {
+              el: endNode,
+              coords: { x: 8, y: 4 },
+            },
+          },
+        };
+      }
 
       function createNode(x, y, className, data) {
-        console.log(className);
         var node = document.createElement("div");
         node.className = "cell";
         node.style.left = `${x * cellSize}px`;
@@ -114,7 +133,11 @@
             if (!nodesMap[x]) {
               nodesMap[x] = {};
             }
-            nodesMap[x][y] = cell;
+            if (!nodesMap[x][y]) {
+              nodesMap[x][y] = {};
+            }
+            nodesMap[x][y].el = cell;
+            nodesMap[x][y].coords = { x, y };
           }
         }
       }
@@ -129,53 +152,41 @@
 
       function solve() {
         // get surrounding paths
-        var starting = { x: 1, y: 1 };
-        getSurroundingNodes(starting);
+        var currentNode = nodesMap[1][1];
+        getSurroundingNodes(currentNode);
       }
 
-      function getSurroundingNodes(coords) {
-        var surroundingNodes = [];
-
+      function getSurroundingNodes(node) {
+        let coords = node.coords;
+        let surroundingNodes = [];
         if (isValidCoords({ x: coords.x, y: coords.y - 1 })) {
-          surroundingNodes.push({
-            x: coords.x,
-            y: coords.y - 1,
-            parentNode: null,
-          });
+          let node = nodesMap[coords.x][coords.y - 1];
+          node.parentNode = nodesMap[coords.x][coords.y];
+          surroundingNodes.push(node);
         }
         if (isValidCoords({ x: coords.x - 1, y: coords.y })) {
-          surroundingNodes.push({
-            x: coords.x - 1,
-            y: coords.y,
-            parentNode: null,
-          });
+          let node = nodesMap[coords.x - 1][coords.y];
+          node.parentNode = nodesMap[coords.x][coords.y];
+          surroundingNodes.push(node);
         }
         if (isValidCoords({ x: coords.x + 1, y: coords.y })) {
-          surroundingNodes.push({
-            x: coords.x + 1,
-            y: coords.y,
-            parentNode: null,
-          });
+          let node = nodesMap[coords.x + 1][coords.y];
+          node.parentNode = nodesMap[coords.x][coords.y];
+          surroundingNodes.push(node);
         }
         if (isValidCoords({ x: coords.x, y: coords.y + 1 })) {
-          surroundingNodes.push({
-            x: coords.x,
-            y: coords.y + 1,
-            parentNode: null,
-          });
+          let node = nodesMap[coords.x][coords.y + 1];
+          node.parentNode = nodesMap[coords.x][coords.y];
+          surroundingNodes.push(node);
         }
 
         for (let i = 0; i < surroundingNodes.length; i++) {
-          var gCost = getDist(surroundingNodes[i], startPoints);
-          var hCost = getDist(surroundingNodes[i], endPoints);
-          var fCost = gCost + hCost;
-          var path = createNode(
-            surroundingNodes[i].x,
-            surroundingNodes[i].y,
-            "path",
-            `<i class="g">${gCost}</i><i class="h">${hCost}</i><i class="f">${fCost}</i>`
-          );
-          grid.appendChild(path);
+          let gCost = getDist(surroundingNodes[i].coords, startPoints);
+          let hCost = getDist(surroundingNodes[i].coords, endPoints);
+          let fCost = gCost + hCost;
+          let node = surroundingNodes[i].el;
+          node.innerHTML = `<i class="g">${gCost}</i><i class="h">${hCost}</i><i class="f">${fCost}</i>`;
+          node.classList.add("path");
         }
       }
 

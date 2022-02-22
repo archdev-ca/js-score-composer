@@ -4,6 +4,10 @@ while currentNode!= endingNode
   getSurroundingNodes(currentNode)
   nearestNodes = nodes with smallest fCost
   for each node in nearestNodes
-    
+
   end for
 end while
+
+
+sub routine getSurroundingNodes
+  update surrounding nodes only if lower fcost

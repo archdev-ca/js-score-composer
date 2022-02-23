@@ -76,47 +76,23 @@
         this.hCost = null;
         this.fCost = null;
       }
-      var grid = document.getElementById("canvas");
-      var gridX = 10;
-      var gridY = 10;
-      var cellSize = 70;
+      let grid = document.getElementById("canvas");
+      let gridX = 10;
+      let gridY = 10;
+      let cellSize = 70;
 
-      var nodes = [];
-      var nodesMap = {};
-      var obstacleMap = {};
-      var endPoints = { x: 8, y: 4 };
-      var startPoints = { x: 1, y: 1 };
-      var openNodes = [];
-      var openNodesMap = {};
-      var closedNodes = [];
-      var closedNodesMap = {};
+      let nodesList = [];
+      let nodesMap = {};
+      let obstacleMap = {};
+      let endPoints = { x: 8, y: 4 };
+      let startPoints = { x: 1, y: 1 };
 
       // Create endpoints
-      {
-        let startNode = createNode(1, 1, "endpoint", '<i class="f">A</i>');
-        nodesMap = {
-          ...nodesMap,
-          [1]: {
-            [1]: {
-              el: startNode,
-              coords: { x: 1, y: 1 },
-            },
-          },
-        };
-        let endNode = createNode(8, 4, "endpoint", '<i class="f">B</i>');
-        nodesMap = {
-          ...nodesMap,
-          [1]: {
-            [1]: {
-              el: endNode,
-              coords: { x: 8, y: 4 },
-            },
-          },
-        };
-      }
+      let startNode = createNode(1, 1, "endpoint", '<i class="f">A</i>');
+      let endNode = createNode(8, 4, "endpoint", '<i class="f">B</i>');
 
       function createNode(x, y, className, data) {
-        var node = document.createElement("div");
+        let node = document.createElement("div");
         node.className = "cell";
         node.style.left = `${x * cellSize}px`;
         node.style.top = `${y * cellSize}px`;
@@ -138,18 +114,18 @@
         grid.style.height = `${gridY * cellSize}px`;
         for (let x = 0; x < gridX; x++) {
           for (let y = 0; y < gridY; y++) {
-            var nodeEl = createNode(x, y);
-            var node = new cellNode();
+            let nodeEl = createNode(x, y);
+            let node = new cellNode();
             node.x = x;
             node.y = y;
             node.el = nodeEl;
-            nodes.push(nodeEl);
+            nodesList.push(nodeEl);
             nodesMap[`${x}:${y}`] = node;
           }
         }
       }
       generateGrid();
-      console.log(nodes);
+      console.log(nodesList);
       console.log(nodesMap);
 
       // Create obstacles
@@ -161,8 +137,8 @@
 
       function solve() {
         // get surrounding paths
-        var currentNode = nodesMap[1][1];
-        var surroundingNodes = getSurroundingNodes(currentNode);
+        let currentNode = nodesMap[1][1];
+        let surroundingNodes = getSurroundingNodes(currentNode);
 
         let loops = 0;
         while (
@@ -175,7 +151,7 @@
         }
 
         // Get lowest fCost
-        var lowestFCost = 99999;
+        let lowestFCost = 99999;
         for (let i = 0; i < surroundingNodes.length; i++) {
           if (surroundingNodes[i].fCost < lowestFCost) {
             lowestFCost = surroundingNodes[i].fCost;

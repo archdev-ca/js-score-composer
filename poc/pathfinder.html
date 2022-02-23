@@ -36,8 +36,12 @@
         background-color: #333;
         z-index: 2;
       }
-      #canvas .cell.path {
+      #canvas .cell.open {
         background-color: rgb(0, 255, 98);
+        z-index: 2;
+      }
+      #canvas .cell.close {
+        background-color: rgb(255, 0, 76);
         z-index: 2;
       }
       #canvas .cell > i {
@@ -72,9 +76,10 @@
         this.el = null;
         this.x = null;
         this.y = null;
-        this.gCost = null;
-        this.hCost = null;
+        this.gCost = 0;
+        this.hCost = 0;
         this.fCost = null;
+        this.parentNode = null;
       }
       let grid = document.getElementById("canvas");
       let gridX = 10;
@@ -87,9 +92,7 @@
       let endPoints = { x: 8, y: 4 };
       let startPoints = { x: 1, y: 1 };
 
-      // Create endpoints
-      let startNode = createNode(1, 1, "endpoint", '<i class="f">A</i>');
-      let endNode = createNode(8, 4, "endpoint", '<i class="f">B</i>');
+      let openNodesList = [];
 
       function createNode(x, y, className, data) {
         let node = document.createElement("div");
@@ -121,12 +124,13 @@
             node.el = nodeEl;
             nodesList.push(nodeEl);
             nodesMap[`${x}:${y}`] = node;
+            nodeEl.addEventListener("click", function () {
+              getSurroundingNodes(node);
+            });
           }
         }
       }
       generateGrid();
-      console.log(nodesList);
-      console.log(nodesMap);
 
       // Create obstacles
       obstacleMap[7] = {};
@@ -135,82 +139,106 @@
       obstacleMap[7][4] = createNode(7, 4, "obstacle");
       obstacleMap[8][3] = createNode(8, 3, "obstacle");
 
-      function solve() {
-        // get surrounding paths
-        let currentNode = nodesMap[1][1];
-        let surroundingNodes = getSurroundingNodes(currentNode);
+      // Create endpoints
+      let startNode = new cellNode();
+      startNode.el = createNode(1, 1, "endpoint", '<i class="f">A</i>');
+      startNode.x = 1;
+      startNode.y = 1;
+      startNode.gCost = 0;
+      startNode.el.addEventListener("click", function () {
+        getSurroundingNodes(startNode);
+      });
 
-        let loops = 0;
-        while (
-          currentNode.coords.x != endPoints.x &&
-          currentNode.coords.y != endPoints.y &&
-          loops < 20
-        ) {
-          console.log("loop count: ", loops);
-          loops += 1;
-        }
+      let endNode = new cellNode();
+      endNode.el = createNode(8, 4, "endpoint", '<i class="f">B</i>');
+      endNode.x = 8;
+      endNode.y = 4;
+      endNode.hCost = 0;
+      openNodesList.push(startNode);
+      endNode.el.addEventListener("click", function () {
+        getSurroundingNodes(endNode);
+      });
+
+      let endToEnd = getDistance(startNode, endNode);
+      startNode.hCost = endToEnd;
+      endNode.gCost = endToEnd;
+
+      function solve(currentNode) {}
+
+      var loops = 0;
+      function explore() {
+        let currentNode = openNodesList.shift();
+        currentNode.el.classList.remove("open");
+        currentNode.el.classList.add("close");
+        let surroundingNodes = getSurroundingNodes(currentNode);
+        let lowestFCost = 99999;
 
         // Get lowest fCost
-        let lowestFCost = 99999;
         for (let i = 0; i < surroundingNodes.length; i++) {
-          if (surroundingNodes[i].fCost < lowestFCost) {
+          if (
+            surroundingNodes[i].fCost !== null &&
+            surroundingNodes[i].fCost < lowestFCost
+          ) {
             lowestFCost = surroundingNodes[i].fCost;
           }
         }
 
-        // queue lowest fCosts
+        // Queue lowest fCosts
         for (let i = 0; i < surroundingNodes.length; i++) {
           if (surroundingNodes[i].fCost === lowestFCost) {
-            openNodes.push(surroundingNodes[i]);
-            openNodesMap[surroundingNodes[i].coords.x] = !!openNodesMap[
-              surroundingNodes[i].coords.x
-            ]
-              ? openNodesMap[surroundingNodes[i].coords.x]
-              : {};
-            openNodesMap[surroundingNodes[i].coords.x][
-              surroundingNodes[i].coords.y
-            ] = surroundingNodes[i];
-
-            console.log(openNodes);
-            console.log(openNodesMap);
+            openNodesList.unshift(surroundingNodes[i]);
           }
+        }
+
+        console.log(currentNode.el);
+        console.log(openNodesList);
+        loops += 1;
+        if (openNodesList.length && loops < 3) {
+          explore();
         }
       }
 
       function getSurroundingNodes(node) {
-        let coords = node.coords;
+        let coords = { x: node.x, y: node.y };
         let surroundingNodes = [];
-        if (isValidCoords({ x: coords.x, y: coords.y - 1 })) {
-          let node = nodesMap[coords.x][coords.y - 1];
-          node.parentNode = nodesMap[coords.x][coords.y];
-          surroundingNodes.push(node);
+
+        if (isValidCoords(nodesMap[`${coords.x}:${coords.y - 1}`], node)) {
+          let adjacentNode = nodesMap[`${node.x}:${node.y - 1}`];
+          node.node = nodesMap[`${node.x}:${node.y - 1}`];
+          surroundingNodes.push(adjacentNode);
         }
-        if (isValidCoords({ x: coords.x - 1, y: coords.y })) {
-          let node = nodesMap[coords.x - 1][coords.y];
-          node.parentNode = nodesMap[coords.x][coords.y];
-          surroundingNodes.push(node);
+        if (isValidCoords(nodesMap[`${coords.x - 1}:${coords.y}`], node)) {
+          let adjacentNode = nodesMap[`${node.x - 1}:${node.y}`];
+          node.node = nodesMap[`${node.x - 1}:${node.y}`];
+          surroundingNodes.push(adjacentNode);
         }
-        if (isValidCoords({ x: coords.x + 1, y: coords.y })) {
-          let node = nodesMap[coords.x + 1][coords.y];
-          node.parentNode = nodesMap[coords.x][coords.y];
-          surroundingNodes.push(node);
+        if (isValidCoords(nodesMap[`${coords.x + 1}:${coords.y}`], node)) {
+          let adjacentNode = nodesMap[`${node.x + 1}:${node.y}`];
+          node.node = nodesMap[`${node.x + 1}:${node.y}`];
+          surroundingNodes.push(adjacentNode);
         }
-        if (isValidCoords({ x: coords.x, y: coords.y + 1 })) {
-          let node = nodesMap[coords.x][coords.y + 1];
-          node.parentNode = nodesMap[coords.x][coords.y];
-          surroundingNodes.push(node);
+        if (isValidCoords(nodesMap[`${coords.x}:${coords.y + 1}`], node)) {
+          let adjacentNode = nodesMap[`${node.x}:${node.y + 1}`];
+          node.node = nodesMap[`${node.x}:${node.y + 1}`];
+          surroundingNodes.push(adjacentNode);
         }
 
         for (let i = 0; i < surroundingNodes.length; i++) {
-          let gCost = getDistance(surroundingNodes[i].coords, startPoints);
-          let hCost = getDistance(surroundingNodes[i].coords, endPoints);
+          let existingNode =
+            nodesMap[`${surroundingNodes[i].x}:${surroundingNodes[i].x}`];
+          let gCost = node.gCost + 10;
+          let hCost = getDistance(surroundingNodes[i], endPoints);
           let fCost = gCost + hCost;
-          let node = surroundingNodes[i].el;
-          surroundingNodes[i].gCost = gCost;
-          surroundingNodes[i].hCost = hCost;
-          surroundingNodes[i].fCost = fCost;
-          node.innerHTML = `<i class="g">${gCost}</i><i class="h">${hCost}</i><i class="f">${fCost}</i>`;
-          node.classList.add("path");
+
+          if (existingNode.fCost == null || fCost < existingNode.fCost) {
+            surroundingNodes[i].gCost = gCost;
+            surroundingNodes[i].hCost = hCost;
+            surroundingNodes[i].fCost = fCost;
+            surroundingNodes[
+              i
+            ].el.innerHTML = `<i class="g">${gCost}</i><i class="h">${hCost}</i><i class="f">${fCost}</i>`;
+            surroundingNodes[i].el.classList.add("open");
+          }
         }
         return surroundingNodes;
       }
@@ -221,7 +249,8 @@
         // Update node at this point only if fCost is lower
       }
 
-      function isValidCoords(coords) {
+      function isValidCoords(node, parentNode) {
+        let coords = { x: node.x, y: node.y };
         if (
           coords.x > -1 &&
           coords.x < cellSize / gridX &&
@@ -229,19 +258,20 @@
           coords.y < cellSize / gridY &&
           !(obstacleMap[coords.x] && obstacleMap[coords.x][coords.y]) &&
           !(coords.x == endPoints.x && coords.y == endPoints.y) &&
-          !(coords.x == startPoints.x && coords.y == startPoints.y)
+          !(coords.x == startPoints.x && coords.y == startPoints.y) &&
+          !(
+            coords.parentNode &&
+            coords.parentNode.x == parentNode.x &&
+            coords.parentNode.y == parentNode.y
+          )
         ) {
           return true;
         }
         return false;
       }
 
-      function getDistance(originCoords, targetCoords) {
-        return (
-          (Math.abs(originCoords.x - targetCoords.x) +
-            Math.abs(originCoords.y - targetCoords.y)) *
-          10
-        );
+      function getDistance(node1, node2) {
+        return (Math.abs(node1.x - node2.x) + Math.abs(node1.y - node2.y)) * 10;
       }
     </script>
   </body>

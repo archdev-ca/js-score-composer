@@ -68,6 +68,14 @@
     <div id="canvas"></div>
     <button onclick="solve()">Solve</button>
     <script>
+      function cellNode() {
+        this.el = null;
+        this.x = null;
+        this.y = null;
+        this.gCost = null;
+        this.hCost = null;
+        this.fCost = null;
+      }
       var grid = document.getElementById("canvas");
       var gridX = 10;
       var gridY = 10;
@@ -78,8 +86,10 @@
       var obstacleMap = {};
       var endPoints = { x: 8, y: 4 };
       var startPoints = { x: 1, y: 1 };
-      var openNodes = {};
-      var closedNodes = {};
+      var openNodes = [];
+      var openNodesMap = {};
+      var closedNodes = [];
+      var closedNodesMap = {};
 
       // Create endpoints
       {
@@ -128,20 +138,19 @@
         grid.style.height = `${gridY * cellSize}px`;
         for (let x = 0; x < gridX; x++) {
           for (let y = 0; y < gridY; y++) {
-            var cell = createNode(x, y);
-            nodes.push(cell);
-            if (!nodesMap[x]) {
-              nodesMap[x] = {};
-            }
-            if (!nodesMap[x][y]) {
-              nodesMap[x][y] = {};
-            }
-            nodesMap[x][y].el = cell;
-            nodesMap[x][y].coords = { x, y };
+            var nodeEl = createNode(x, y);
+            var node = new cellNode();
+            node.x = x;
+            node.y = y;
+            node.el = nodeEl;
+            nodes.push(nodeEl);
+            nodesMap[`${x}:${y}`] = node;
           }
         }
       }
       generateGrid();
+      console.log(nodes);
+      console.log(nodesMap);
 
       // Create obstacles
       obstacleMap[7] = {};
@@ -153,7 +162,43 @@
       function solve() {
         // get surrounding paths
         var currentNode = nodesMap[1][1];
-        getSurroundingNodes(currentNode);
+        var surroundingNodes = getSurroundingNodes(currentNode);
+
+        let loops = 0;
+        while (
+          currentNode.coords.x != endPoints.x &&
+          currentNode.coords.y != endPoints.y &&
+          loops < 20
+        ) {
+          console.log("loop count: ", loops);
+          loops += 1;
+        }
+
+        // Get lowest fCost
+        var lowestFCost = 99999;
+        for (let i = 0; i < surroundingNodes.length; i++) {
+          if (surroundingNodes[i].fCost < lowestFCost) {
+            lowestFCost = surroundingNodes[i].fCost;
+          }
+        }
+
+        // queue lowest fCosts
+        for (let i = 0; i < surroundingNodes.length; i++) {
+          if (surroundingNodes[i].fCost === lowestFCost) {
+            openNodes.push(surroundingNodes[i]);
+            openNodesMap[surroundingNodes[i].coords.x] = !!openNodesMap[
+              surroundingNodes[i].coords.x
+            ]
+              ? openNodesMap[surroundingNodes[i].coords.x]
+              : {};
+            openNodesMap[surroundingNodes[i].coords.x][
+              surroundingNodes[i].coords.y
+            ] = surroundingNodes[i];
+
+            console.log(openNodes);
+            console.log(openNodesMap);
+          }
+        }
       }
 
       function getSurroundingNodes(node) {
@@ -181,13 +226,17 @@
         }
 
         for (let i = 0; i < surroundingNodes.length; i++) {
-          let gCost = getDist(surroundingNodes[i].coords, startPoints);
-          let hCost = getDist(surroundingNodes[i].coords, endPoints);
+          let gCost = getDistance(surroundingNodes[i].coords, startPoints);
+          let hCost = getDistance(surroundingNodes[i].coords, endPoints);
           let fCost = gCost + hCost;
           let node = surroundingNodes[i].el;
+          surroundingNodes[i].gCost = gCost;
+          surroundingNodes[i].hCost = hCost;
+          surroundingNodes[i].fCost = fCost;
           node.innerHTML = `<i class="g">${gCost}</i><i class="h">${hCost}</i><i class="f">${fCost}</i>`;
           node.classList.add("path");
         }
+        return surroundingNodes;
       }
 
       function createAdjacentNode(x, y) {
@@ -211,7 +260,7 @@
         return false;
       }
 
-      function getDist(originCoords, targetCoords) {
+      function getDistance(originCoords, targetCoords) {
         return (
           (Math.abs(originCoords.x - targetCoords.x) +
             Math.abs(originCoords.y - targetCoords.y)) *
